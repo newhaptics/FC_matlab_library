@@ -5,3 +5,4 @@ while hasFrame(obj)
     framecount = framecount +1;
     current_time(framecount) = obj.currenttime;
 end
+ueotuaeouetnsohsan
