@@ -97,25 +97,37 @@ classdef fluidicChip_statistics
             reply='';
             reply=input('Do you want to pick new crop regions? y/[] (yes/use previous) : ','s');
             
-            if strcmp(reply,'y')==1
-                %create video reader for cell
-                video = FC.create_reader(location,in);
+            
+            %try to crop if fail try again
+            try
+                if strcmp(reply,'y')==1
+                    %create video reader for cell
+                    video = FC.create_reader(location,in);
+                    
+                    %get the position matrix for the cell
+                    posMatrix = position_matrix(video,FC.interestAreas);
+                    
+               
+                    %index in the crop matrix
+                    index = FC.get_cropIndex(location);
+                    
+                    %place the crop matrix in its proper place
+                    FC.videoContainer(in + 1).cropMatrix(:,:,index) = posMatrix;
+                    FC.cropData = posMatrix;
+                else
+                    %use the previous crop data
+                    %index in the crop matrix
+                    index = FC.get_cropIndex(location);
+                    FC.videoContainer(in + 1).cropMatrix(:,:,index) = FC.cropData;
+                end
                 
-                %get the position matrix for the cell
-                posMatrix = position_matrix(video,FC.interestAreas);
+            catch
+                disp('Something went wrong retrying element crop...');
+                FC.get_cropData(location,in);
                 
-                %index in the crop matrix
-                index = FC.get_cropIndex(location);
-                
-                %place the crop matrix in its proper place
-                FC.videoContainer(in + 1).cropMatrix(:,:,index) = posMatrix;
-                FC.cropData = posMatrix;
-            else
-               %use the previous crop data
-               %index in the crop matrix
-               index = FC.get_cropIndex(location);
-               FC.videoContainer(in + 1).cropMatrix(:,:,index) = FC.cropData;
             end
+            
+            
         end
         
         
@@ -209,9 +221,9 @@ classdef fluidicChip_statistics
                 [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
                 
                 plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
-                set(gcf, 'units', 'normalized', 'position', [0 0 1 1]);
+                set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
                 plotData(pulseBright,pulseDf,FC.interestAreas, ['\fontsize{20}' 'Gate Pulse Brightness Data ' localString]); 
-                set(gcf, 'units', 'normalized', 'position', [0 0 1 1]);
+                set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
             else
                 disp(['no data in ' localString]);
             end

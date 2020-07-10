@@ -16,27 +16,29 @@ dimensions = size(FC.chip);
 rows = dimensions(1);
 columns = dimensions(2);
 model = FC.model;
-for i = 1:rows
-    for j = 1:columns
+
+for j = 1:columns
+    for i = 1:rows
+        
         for in = 0:1
             
             file = FC.get_videoFile([i j], in);
             
             if isempty(file{1}) == 0
                 %% crop the data or use previous crop
- 
+                
                 FC = FC.get_cropData([i j],in);
-            
+                
                 % generate data from crop
                 
                 FC = FC.get_cellData([i j], in);
                 FC = FC.get_timingData([i j],in);
-            
-            
-            
+                
+                
+                
+                
             end
             
         end
-        
     end
 end

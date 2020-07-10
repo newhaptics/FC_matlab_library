@@ -14,16 +14,11 @@ posMatrix=zeros(outputs,4);
 % posMatrixCrops=zeros(outputs,4,5); % max of five interior crop regions
 % num_crop_regions=zeros(length(outputs),1);
 
+
 for i=1:outputs
     %for outputs that are not electronic
     if ~contains(name(i),'electronic')
-        clear reg
-        close(thisfig)
-        thisfig = figure(1);
-        imshow(this_frame);
-        disp(['For region: ' name(i)]);
-        
-        [reg,posMatrix(i,:)]= imcrop(this_frame);
+        [reg,posMatrix(i,:)]= element_crop(thisfig,i, this_frame, name);
     end
     %% For making multiple crop regions per area of interest
     %     num_crop_regions(i,1)=input('Enter the number of cropped regions: ');
@@ -41,3 +36,17 @@ close all;
 
 end
 
+%function to crop element
+function [reg, posMatrix] = element_crop(thisfig, i, this_frame, name)
+    clear reg
+    close all
+    thisfig = figure(1);
+    %imshow(this_frame);
+    disp(['For region: ' name(i)]);
+try   
+    [reg, posMatrix]= imcrop(this_frame);
+catch
+    disp('retrying interest area crop...');
+    [reg, posMatrix]= element_crop(thisfig, i, this_frame, name);
+end
+end
