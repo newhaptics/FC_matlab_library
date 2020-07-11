@@ -178,12 +178,12 @@ classdef fluidicChip_statistics
 
             %if input is 0 grab from data 0
             if input == 0
-            pulseBright = FC.brightMatrix(row,column).pulseBright0;
+            [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
             end
 
             %if input is 1 grab from data 1
             if input == 1
-            pulseBright = FC.brightMatrix(row,column).pulseBright1;
+            [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
             end
 
             if isempty(pulseBright) == 0
@@ -193,7 +193,7 @@ classdef fluidicChip_statistics
                 Trig_data = FC.timeContainer(input+1).chipTrig_data;
 
 
-                [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data);
+                [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input);
 
                 FC.timeContainer(input + 1).chipGate_times(row,column,:) = Gate_times;
                 FC.timeContainer(input + 1).chipIn_times(row,column,:) = In_times;
@@ -422,12 +422,12 @@ classdef fluidicChip_statistics
             if input == 0
                 avgBright = FC.brightMatrix(row,column).avgBright0;
                 df = FC.brightMatrix(row,column).df0;
-                [pulseBright, pulseDf] = pulseCrop(avgBright, df, FC.interestAreas);
+                [pulseDf, pulseBright] = pulseCrop(avgBright, df, FC.interestAreas);
             end
             if input == 1
                 avgBright = FC.brightMatrix(row,column).avgBright1;
                 df = FC.brightMatrix(row,column).df1;
-                [pulseBright, pulseDf] = pulseCrop(avgBright, df, FC.interestAreas);
+                [pulseDf, pulseBright] = pulseCrop(avgBright, df, FC.interestAreas);
             end
 
 

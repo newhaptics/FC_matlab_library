@@ -11,7 +11,7 @@ addpath(func_dir)
 
 save_data = 1;  % 0 to turn off save-data
 
-%% loop through data aquisition for all the cells
+%% get crop data
 dimensions = size(FC.chip);
 rows = dimensions(1);
 columns = dimensions(2);
@@ -25,19 +25,32 @@ for j = 1:columns
             file = FC.get_videoFile([i j], in);
             
             if isempty(file{1}) == 0
-                %% crop the data or use previous crop
-                
+    
                 FC = FC.get_cropData([i j],in);
+                
+            end
+            
+        end
+    end
+end
+
+
+%% get cell and timing data
+dimensions = size(FC.chip);
+rows = dimensions(1);
+columns = dimensions(2);
+model = FC.model;
+
+for j = 1:columns
+    for i = 1:rows
+        
+        for in = 0:1
                 
                 % generate data from crop
                 
                 FC = FC.get_cellData([i j], in);
                 FC = FC.get_timingData([i j],in);
                 
-                
-                
-                
-            end
             
         end
     end

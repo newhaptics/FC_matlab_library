@@ -260,49 +260,35 @@ outPulse_end = 0;
 
 %find middle value
 N = pulseBright(20:end-20,index); 
-V = max(pulseBright(20:end-20,index)) - mean(pulseBright(20:end-20,index));
+V = mean(pulseBright(20:end-20,index));
 
 [~, closestIndex] = min(abs(N - V.'));
 outSwitch = closestIndex + 19;
 
 %build backwards in time first
-for i = flip(1:outSwitch)
+for i = flip(outSwitch:1)
      if in == 0
-       A = pulseBright(i,index) < 0.75*gate1_reference;
-       B = pulseBright(i,index) < pulseBright(i - 1, index);
+       A = pulseBright(i,index) < 0.8*gate1_reference;
     else
-       A = pulseBright(i,index) > 0.25*gate1_reference;
-       B = pulseBright(i,index) > pulseBright(i - 1, index);
+       A = pulseBright(i,index) > 0.20*gate1_reference;
     end
     
     if A
         outPulse_start = i;
-    else
-        if B
-            outPulse_start = i;
-        else
-            break
-        end
+        break
     end
 end
 
 for i = outPulse_start:length(pulseBright)
     if in == 0
-       A = pulseBright(i,index) > 0.25*gate1_reference;
-       B = pulseBright(i,index) > pulseBright(i + 1, index);
+       A = pulseBright(i,index) < 0.8*gate1_reference;
     else
-       A = pulseBright(i,index) < 0.75*gate1_reference;
-       B = pulseBright(i,index) < pulseBright(i + 1, index);
+       A = pulseBright(i,index) > 0.20*gate1_reference;
     end
     
     if A
         outPulse_end = i;
-    else
-        if B
-            outPulse_end = i;
-        else
-            break
-        end
+        break
     end
 end
 
