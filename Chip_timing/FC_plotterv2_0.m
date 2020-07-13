@@ -37,7 +37,7 @@ FC.generate_allBrightnessdata([1:15],[1:14],2);
 x_limits = [0 inf];
 y_limits = [0 1];
 df = 0;
-display_off = '1';
+display_off = '2';
 
 
 h = openfig('fig1');
@@ -82,3 +82,6 @@ for i = 1:6
     end
 end
 plotbrowser(h,'on');
+
+%%
+FC.generate_timingData(1)

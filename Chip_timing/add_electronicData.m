@@ -2,7 +2,6 @@ function [avgBright] = add_electronicData(avgBright,name,s,h,pw,frameRate)
 %ADD_ELECTRONICDATA adds the electronic triggers to avgBright
 
 
-tic
 frameRate = frameRate*16;
 ledDelay = ceil(0.5*frameRate);
 
@@ -31,14 +30,12 @@ eGate(gateStart:gateStart + length(gatePulse) - 1) = gatePulse;
 avgBright(:,index) = eGate;
 
 
-%create the electronic In signal 
+%create the electronic In signal
 index = findIndex(name,'electronicIn');
 eIn = ones(length(avgBright),1);
 eIn(inStart:inStart + length(inPulse) - 1) = inPulse;
 avgBright(:,index) = eIn;
 
-toc
 
 
 end
-

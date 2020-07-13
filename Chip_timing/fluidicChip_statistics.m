@@ -148,9 +148,9 @@ classdef fluidicChip_statistics
             %grab setup hold and pw times
 
             filename = FC.videoContainer(1,input + 1).videoMatrix(location(1),location(2));
-            s = [str2double(extractBetween(filename,"s","_"))] / 1000000;
-            h = [str2double(extractBetween(filename,"h","_"))] / 1000000;
-            pw = [str2double(extractBetween(filename,"p","_"))] / 1000000;
+            s = [str2double(extractBetween(filename,"s","_"))] / 1000;
+            h = [str2double(extractBetween(filename,"h","_"))] / 1000;
+            pw = [str2double(extractBetween(filename,"p","_"))] / 1000;
             video = FC.create_reader(location,input);
             frameRate = video.FrameRate;
 
@@ -191,11 +191,15 @@ classdef fluidicChip_statistics
                 In_data = FC.timeContainer(input+1).chipIn_data;
                 Out_data = FC.timeContainer(input+1).chipOut_data;
                 Trig_data = FC.timeContainer(input+1).chipTrig_data;
-
-
+                
+               filename = FC.videoContainer(1,input + 1).videoMatrix(row,column);
+               %get the setup hold and pulse width
+               s = [str2double(extractBetween(filename,"s","_"))];
+               h = [str2double(extractBetween(filename,"h","_"))];
+               pw = [str2double(extractBetween(filename,"p","_"))];
                
                 
-                [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input);
+                [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input, s, h, pw);
 
                 FC.timeContainer(input + 1).chipGate_times(row,column,:) = Gate_times;
                 FC.timeContainer(input + 1).chipIn_times(row,column,:) = In_times;
@@ -345,17 +349,28 @@ classdef fluidicChip_statistics
             gateMatrix = FC.timeContainer(1,input + 1).chipGate_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             inMatrix = FC.timeContainer(1,input + 1).chipIn_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             outMatrix = FC.timeContainer(1,input + 1).chipOut_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
-            trigMatrix = FC.timeContainer(1,input + 1).chipTrig_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            trigMatrix(:,:,1:3) = FC.timeContainer(1,input + 1).chipTrig_times(:,:,1:3) ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            trigMatrix(:,:,4:6) = FC.timeContainer(1,input + 1).chipTrig_times(:,:,4:6);
+            
+            %create a differenc matrix
+            trigDiff_mat = trigMatrix(:,:,1:3) - trigMatrix(:,:,4:6);
+            trigDiff_data = {'Setup Diff','Hold Diff','Pulse Width Diff'};
+            %diffHeader = 'Setup, Hold, Pulse Width Differences';
+            
+            %merge diff and trig matrices
+            trigMatrix = cat(3,trigMatrix,trigDiff_mat);
             
             
-            make_heatMap(gateMatrix,FC.timeContainer(1,2).chipGate_data, gateHeader)
+            make_heatMap(gateMatrix,FC.timeContainer(1,2).chipGate_data, gateHeader);
             set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
-            make_heatMap(inMatrix,FC.timeContainer(1,2).chipIn_data, inHeader)
+            make_heatMap(inMatrix,FC.timeContainer(1,2).chipIn_data, inHeader);
             set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
-            make_heatMap(outMatrix,FC.timeContainer(1,2).chipOut_data, outHeader)
+            make_heatMap(outMatrix,FC.timeContainer(1,2).chipOut_data, outHeader);
             set(gcf, 'units', 'normalized', 'position', [0 0 .5 0.9]);
-            make_heatMap(trigMatrix,FC.timeContainer(1,2).chipTrig_data, trigHeader)
+            make_heatMap(trigMatrix,[FC.timeContainer(1,2).chipTrig_data trigDiff_data], trigHeader);
             set(gcf, 'units', 'normalized', 'position', [0.5 0 .5 0.9]);
+            %make_heatMap(trigDiff_mat, trigDiff_data, diffHeader)
+            %set(gcf, 'units', 'normalized', 'position', [0.5 0 .5 0.9]);
 
         end
 

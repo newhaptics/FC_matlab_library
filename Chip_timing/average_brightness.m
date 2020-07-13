@@ -21,7 +21,6 @@ avgBright = zeros(total_frames,outputs);
 % x=0; % create variable to track progress of program
 
 
-tic
 for i = 1:total_frames
 
    currentTime = (i-1)*(1/(16*video.framerate));
@@ -32,6 +31,5 @@ for i = 1:total_frames
         avgBright(i,j)=mean2(imcrop(this_frame,posMatrix(j,:)));
    end
 end
-toc
 end
 

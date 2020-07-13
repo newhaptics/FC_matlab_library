@@ -1,4 +1,4 @@
-function [chipGate_vec, chipIn_vec, chipOut_vec, chipTrig_vec] = pulseData(pulseBright,name, chipGate_data, chipIn_data, chipOut_data, chipTrig_data, in)
+function [chipGate_vec, chipIn_vec, chipOut_vec, chipTrig_vec] = pulseData(pulseBright, name, chipGate_data, chipIn_data, chipOut_data, chipTrig_data, in, setup, hold, pw)
 % pulseData takes in the avgBright and names of the measurements
 % and returns the timing vectors
 
@@ -21,15 +21,15 @@ index = findIndex(name,'chipGate');
 [pulseGate, pulseGate_bottom] = find_gatePulse(pulseBright,index);
 
 %delay from led to actual pulse
-index = findIndex(chipGate_data, 'Front Delay');
+index = findIndex(chipGate_data, 'Gate Front Delay');
 chipGate_vec(index) = pulseGate(1);
 
 %delay on back end
-index = findIndex(chipGate_data, 'Back Delay');
+index = findIndex(chipGate_data, 'Gate Back Delay');
 chipGate_vec(index) = length(pulseBright) - pulseGate(end);
 
 %duration of pulse
-index = findIndex(chipGate_data, 'Pulse Duration');
+index = findIndex(chipGate_data, 'Gate Pulse Width');
 chipGate_vec(index) = length(pulseGate);
 
 %duration of gate off
@@ -37,11 +37,11 @@ index = findIndex(chipGate_data, 'Gate Off');
 chipGate_vec(index) = length(pulseGate_bottom);
 
 %gate 1->0
-index = findIndex(chipGate_data, 'Drop Time');
+index = findIndex(chipGate_data, 'Gate Drop Time');
 chipGate_vec(index) = pulseGate_bottom(1) - pulseGate(1);
 
 %gate 0->1
-index = findIndex(chipGate_data, 'Rise Time');
+index = findIndex(chipGate_data, 'Gate Rise Time');
 chipGate_vec(index) = pulseGate(end) - pulseGate_bottom(end);
 
 
@@ -54,23 +54,23 @@ index = findIndex(name,'chipIn');
 [pulseIn, pulseIn_steady] = find_chipIn(pulseBright,index,in);
 
 %delay from led to actual pulse
-index = findIndex(chipIn_data, 'Front Delay');
+index = findIndex(chipIn_data, 'Input Front Delay');
 chipIn_vec(index) = pulseIn(1);
 
 %delay on back end
-index = findIndex(chipIn_data, 'Back Delay');
+index = findIndex(chipIn_data, 'Input Back Delay');
 chipIn_vec(index) = length(pulseBright) - pulseIn(end);
 
 %duration of pulse
-index = findIndex(chipIn_data, 'Pulse Duration');
+index = findIndex(chipIn_data, 'Input Pulse Width');
 chipIn_vec(index) = length(pulseIn);
 
 %duration of gate off
-index = findIndex(chipIn_data, 'Steady State');
+index = findIndex(chipIn_data, 'Input Steady State');
 chipIn_vec(index) = length(pulseIn_steady);
 
 %input 1->0
-index = findIndex(chipIn_data, 'Drop Time');
+index = findIndex(chipIn_data, 'Input Drop Time');
 if in == 0
     chipIn_vec(index) = pulseIn_steady(1) - pulseIn(1);
 else
@@ -78,7 +78,7 @@ else
 end
 
 %input 0->1
-index = findIndex(chipIn_data, 'Rise Time');
+index = findIndex(chipIn_data, 'Input Rise Time');
 if in == 0
     chipIn_vec(index) = pulseIn(end) - pulseIn_steady(end);
 else
@@ -100,26 +100,40 @@ index = findIndex(chipOut_data, 'Propagation Delay');
 chipOut_vec(index) = outPulse(end) - pulseGate(1);
 
 %delay on back end
-index = findIndex(chipOut_data, 'Change Time');
+index = findIndex(chipOut_data, 'Bubble Inflation Time');
 chipOut_vec(index) = length(outPulse);
 
 %% chipTrig timing data
 
 %use information already gathered to calculate times
 
-%verify the setup time
-index = findIndex(chipTrig_data, 'Setup Time');
+%fluidic level setup time
+index = findIndex(chipTrig_data, 'Fluidic Setup Time');
 chipTrig_vec(index) = pulseGate(1) - pulseIn(1);
 
 
-%verified hold time
-index = findIndex(chipTrig_data, 'Hold Time');
+%fluidic level hold time
+index = findIndex(chipTrig_data, 'Fluidic Hold Time');
 chipTrig_vec(index) = pulseIn(end) - pulseGate(1);
 
 
-%verified the pulse width
-index = findIndex(chipTrig_data, 'Pulse Width');
+%fluidic pulse width
+index = findIndex(chipTrig_data, 'Fluidic Pulse Width');
 chipTrig_vec(index) = pulseGate(end) - pulseGate(1);
+
+%Electronic setup time
+index = findIndex(chipTrig_data, 'Electronic Setup Time');
+chipTrig_vec(index) = setup;
+
+
+%Electronic hold time
+index = findIndex(chipTrig_data, 'Electronic Hold Time');
+chipTrig_vec(index) = hold;
+
+
+%Electronic pulse width
+index = findIndex(chipTrig_data, 'Electronic Pulse Width');
+chipTrig_vec(index) = pw;
 
 
 

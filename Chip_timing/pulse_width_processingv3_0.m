@@ -41,6 +41,7 @@ rows = dimensions(1);
 columns = dimensions(2);
 model = FC.model;
 
+
 for j = 1:columns
     for i = 1:rows
         
@@ -50,9 +51,14 @@ for j = 1:columns
             
             if isempty(file{1}) == 0
                 % generate data from crop
-                
+                disp(['processing brightness data for row ' num2str(i) ' column ' num2str(j) ' input ' num2str(in)]);
+                tic
                 FC = FC.get_cellData([i j], in);
+                toc
+                disp(['processing timing data for row ' num2str(i) ' column ' num2str(j) ' input ' num2str(in)]);
+                tic
                 FC = FC.get_timingData([i j],in);
+                toc
             end
             
         end
