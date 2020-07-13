@@ -15,7 +15,7 @@ for k = 1:outputs
     set(gca,'fontsize', 16);
     grid on
     ylabel(name(k));
-    ylim([0 max(avgBright(:,k))-min(avgBright(:,k))]);
+    ylim([0 1]);
     if  k~=outputs
         set(gca,'XTick',[]);
     end

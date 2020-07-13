@@ -1,5 +1,6 @@
-function [pulseDf, pulseBright] = pulseCrop(avgBright,df,name)
+function [pulseDf, pulseBright, fallEdge, riseEdge] = pulseCrop(avgBright,df,name)
 % pulseData takes in the avgBright and df data and crops it to fit within
+% also returns the amount cropped off at the beginning
 % the pulse of the arduino leds
 
 index = findIndex(name,'gateLed');
@@ -19,6 +20,8 @@ risingEdge = gate_change(gate_change > s);
 %cropped pulse brightness and differential
 pulseDf = df(fallingEdge(end):risingEdge(1) - 1,:);
 pulseBright = avgBright(fallingEdge(end):risingEdge(1) - 1,:);
+fallEdge = fallingEdge(end);
+riseEdge = risingEdge(1);
 
 end
 

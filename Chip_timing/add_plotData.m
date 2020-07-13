@@ -23,7 +23,7 @@ for k = 1:length(name)
     set(gca,'fontsize', 16);
     grid on
     ylabel(name(k));
-    ylim([0 inf]);
+    ylim([0 1]);
     if  k~=length(name)
         set(gca,'XTick',[]);
     end

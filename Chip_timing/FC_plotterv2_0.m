@@ -30,12 +30,12 @@ end
 %% Generate combined brightness graphs
 
 
-FC.generate_allBrightnessdata([1:10],[1:10],2);
+FC.generate_allBrightnessdata([1:15],[1:14],2);
 
 
 %% graph adjustment parameters
-x_limits = [400 850];
-y_limits = [0 0.1];
+x_limits = [0 inf];
+y_limits = [0 1];
 df = 0;
 display_off = '0';
 

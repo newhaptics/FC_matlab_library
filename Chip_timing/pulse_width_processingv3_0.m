@@ -46,11 +46,14 @@ for j = 1:columns
         
         for in = 0:1
                 
+            file = FC.get_videoFile([i j], in);
+            
+            if isempty(file{1}) == 0
                 % generate data from crop
                 
                 FC = FC.get_cellData([i j], in);
                 FC = FC.get_timingData([i j],in);
-                
+            end
             
         end
     end
