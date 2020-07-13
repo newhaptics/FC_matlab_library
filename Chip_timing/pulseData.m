@@ -96,8 +96,8 @@ index = findIndex(name,'chipOut');
 [outPulse] = find_outPulse(pulseBright,index,in);
 
 %delay from led to actual pulse
-index = findIndex(chipOut_data, 'Internal Propagation');
-chipOut_vec(index) = outPulse(1) - pulseIn(1);
+index = findIndex(chipOut_data, 'Propagation Delay');
+chipOut_vec(index) = outPulse(end) - pulseGate(1);
 
 %delay on back end
 index = findIndex(chipOut_data, 'Change Time');

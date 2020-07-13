@@ -193,12 +193,23 @@ classdef fluidicChip_statistics
                 Trig_data = FC.timeContainer(input+1).chipTrig_data;
 
 
+               
+                
                 [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input);
 
                 FC.timeContainer(input + 1).chipGate_times(row,column,:) = Gate_times;
                 FC.timeContainer(input + 1).chipIn_times(row,column,:) = In_times;
                 FC.timeContainer(input + 1).chipOut_times(row,column,:) = Out_times;
                 FC.timeContainer(input + 1).chipTrig_times(row,column,:) = Trig_times;
+                
+                %fill the framerate matrix
+                video = FC.create_reader(location,input);
+                
+                FC.videoContainer(input + 1).framerateMatrix(row,column) = video.framerate;
+                
+                
+                
+                
             else
                 disp({'no pulse found at' row column});
             end
@@ -221,8 +232,10 @@ classdef fluidicChip_statistics
                 [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
 
                 plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
+                savefig('fig1');
                 set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
                 plotData(pulseBright,pulseDf,FC.interestAreas, ['\fontsize{20}' 'Gate Pulse Brightness Data ' localString]);
+                savefig('fig2');
                 set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
             else
                 disp(['no data in ' localString]);
@@ -330,7 +343,7 @@ classdef fluidicChip_statistics
             trigHeader = [FC.model ' Trigger Timing Input ' num2str(input)];
 
 
-
+    
             make_heatMap(FC.timeContainer(1,input + 1).chipGate_times,FC.timeContainer(1,2).chipGate_data, gateHeader)
             set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
             make_heatMap(FC.timeContainer(1,input + 1).chipIn_times,FC.timeContainer(1,2).chipIn_data, inHeader)
@@ -470,21 +483,27 @@ classdef fluidicChip_statistics
         function [avgBright, df, pulseBright, pulseDf] = get_brightData(FC,location,input)
             row = location(1);
             column = location(2);
-
+            
             if input == 0
                 avgBright = FC.brightMatrix(row,column).avgBright0;
                 df = FC.brightMatrix(row,column).df0;
                 if ~isempty(avgBright)
-                [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
-            
+                    [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                else
+                    pulseDf = [];
+                    pulseBright = [];
                 end
+            end
             if input == 1
                 avgBright = FC.brightMatrix(row,column).avgBright1;
                 df = FC.brightMatrix(row,column).df1;
-                [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                if ~isempty(avgBright)
+                    [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                else
+                    pulseDf = [];
+                    pulseBright = [];
+                end
             end
-
-
         end
 
         function brightData = store_brightnessData(~,avgBright,df,input,Data)

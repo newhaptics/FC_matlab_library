@@ -5,8 +5,8 @@ classdef timingData
         %chip timing data names
         chipGate_data = {'Front Delay','Drop Time','Rise Time','Back Delay','Pulse Duration','Gate Off'};
         chipIn_data = {'Front Delay','Rise Time','Steady State','Drop Time','Back Delay','Pulse Duration'};
-        chipOut_data = {'Internal Propagation','Change Time'};
-        chipTrig_data = {'Setup Time','Hold time', 'Pulse Width'};
+        chipOut_data = {'Propagation Delay','Change Time'};
+        chipTrig_data = {'Setup Time','Hold Time', 'Pulse Width'};
 
         %chip timing matrices
         chipGate_times;

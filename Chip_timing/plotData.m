@@ -20,11 +20,9 @@ for k = 1:outputs
         set(gca,'XTick',[]);
     end
     hold off;
-    
     if k==outputs
         xlabel('Time (s)');
     end
 end
 
 end
-

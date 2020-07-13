@@ -193,12 +193,23 @@ classdef fluidicChip_statistics
                 Trig_data = FC.timeContainer(input+1).chipTrig_data;
 
 
+               
+                
                 [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input);
 
                 FC.timeContainer(input + 1).chipGate_times(row,column,:) = Gate_times;
                 FC.timeContainer(input + 1).chipIn_times(row,column,:) = In_times;
                 FC.timeContainer(input + 1).chipOut_times(row,column,:) = Out_times;
                 FC.timeContainer(input + 1).chipTrig_times(row,column,:) = Trig_times;
+                
+                %fill the framerate matrix
+                video = FC.create_reader(location,input);
+                
+                FC.videoContainer(1,input + 1).framerateMatrix(row,column) = video.framerate*16;
+                
+                
+                
+                
             else
                 disp({'no pulse found at' row column});
             end
@@ -221,8 +232,10 @@ classdef fluidicChip_statistics
                 [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
 
                 plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
+                savefig('fig1');
                 set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
                 plotData(pulseBright,pulseDf,FC.interestAreas, ['\fontsize{20}' 'Gate Pulse Brightness Data ' localString]);
+                savefig('fig2');
                 set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
             else
                 disp(['no data in ' localString]);
@@ -328,16 +341,20 @@ classdef fluidicChip_statistics
             inHeader = [FC.model ' In Timing Input ' num2str(input)];
             outHeader = [FC.model ' Out Timing Input ' num2str(input)];
             trigHeader = [FC.model ' Trigger Timing Input ' num2str(input)];
-
-
-
-            make_heatMap(FC.timeContainer(1,input + 1).chipGate_times,FC.timeContainer(1,2).chipGate_data, gateHeader)
+            
+            gateMatrix = FC.timeContainer(1,input + 1).chipGate_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            inMatrix = FC.timeContainer(1,input + 1).chipIn_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            outMatrix = FC.timeContainer(1,input + 1).chipOut_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            trigMatrix = FC.timeContainer(1,input + 1).chipTrig_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
+            
+            
+            make_heatMap(gateMatrix,FC.timeContainer(1,2).chipGate_data, gateHeader)
             set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
-            make_heatMap(FC.timeContainer(1,input + 1).chipIn_times,FC.timeContainer(1,2).chipIn_data, inHeader)
+            make_heatMap(inMatrix,FC.timeContainer(1,2).chipIn_data, inHeader)
             set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
-            make_heatMap(FC.timeContainer(1,input + 1).chipOut_times,FC.timeContainer(1,2).chipOut_data, outHeader)
+            make_heatMap(outMatrix,FC.timeContainer(1,2).chipOut_data, outHeader)
             set(gcf, 'units', 'normalized', 'position', [0 0 .5 0.9]);
-            make_heatMap(FC.timeContainer(1,input + 1).chipTrig_times,FC.timeContainer(1,2).chipTrig_data, trigHeader)
+            make_heatMap(trigMatrix,FC.timeContainer(1,2).chipTrig_data, trigHeader)
             set(gcf, 'units', 'normalized', 'position', [0.5 0 .5 0.9]);
 
         end
