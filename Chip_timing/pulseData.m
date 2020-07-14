@@ -97,7 +97,7 @@ index = findIndex(name,'chipOut');
 
 %delay from led to actual pulse
 index = findIndex(chipOut_data, 'Propagation Delay');
-chipOut_vec(index) = outPulse(end) - pulseGate(1);
+chipOut_vec(index) = outPulse(end) - pulseGate_bottom(1);
 
 %delay on back end
 index = findIndex(chipOut_data, 'Bubble Inflation Time');
@@ -109,17 +109,17 @@ chipOut_vec(index) = length(outPulse);
 
 %fluidic level setup time
 index = findIndex(chipTrig_data, 'Fluidic Setup Time');
-chipTrig_vec(index) = pulseGate(1) - pulseIn(1);
+chipTrig_vec(index) = pulseGate_bottom(1) - pulseIn_steady(1);
 
 
 %fluidic level hold time
 index = findIndex(chipTrig_data, 'Fluidic Hold Time');
-chipTrig_vec(index) = pulseIn(end) - pulseGate(1);
+chipTrig_vec(index) = pulseIn(end) - pulseGate_bottom(1);
 
 
 %fluidic pulse width
 index = findIndex(chipTrig_data, 'Fluidic Pulse Width');
-chipTrig_vec(index) = pulseGate(end) - pulseGate(1);
+chipTrig_vec(index) = pulseGate(end) - pulseGate_bottom(1);
 
 %Electronic setup time
 index = findIndex(chipTrig_data, 'Electronic Setup Time');

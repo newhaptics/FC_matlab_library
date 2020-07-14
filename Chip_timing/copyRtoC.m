@@ -38,14 +38,24 @@ cd(am_dir)
 addpath(vid_dir)
 
 video_ext = '.avi';
+txt_ext = '.txt';
 
 filenames = dir([vid_dir chip_version '*' video_ext]);
+txtfilenames = dir([vid_dir chip_version '*' txt_ext]);
 
 for i  = 1:length(filenames)
     file = filenames(i).name;
     newfilename = [erase(file,video_ext) '_' datestr(now,30) video_ext];
     if isfile([vid_dir '/' file])
         copyfile([vid_dir '/' file],newfilename);
-        delete([vid_dir '/' file]);
     end
 end
+
+for i  = 1:length(txtfilenames)
+    file = txtfilenames(i).name;
+    newfilename = [erase(file,txt_ext) '_' datestr(now,30) txt_ext];
+    if isfile([vid_dir '/' file])
+        copyfile([vid_dir '/' file],newfilename);
+    end
+end
+

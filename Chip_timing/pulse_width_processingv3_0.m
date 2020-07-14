@@ -17,6 +17,7 @@ rows = dimensions(1);
 columns = dimensions(2);
 model = FC.model;
 
+
 for j = 1:columns
     for i = 1:rows
         
@@ -40,7 +41,6 @@ dimensions = size(FC.chip);
 rows = dimensions(1);
 columns = dimensions(2);
 model = FC.model;
-
 
 for j = 1:columns
     for i = 1:rows

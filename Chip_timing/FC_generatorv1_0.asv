@@ -42,8 +42,8 @@ end
 model = FC.model;
 for k = 1:length(filenames)
     file = char(filenames(k));
-    if strcmp(extractBefore(file,'_S'),model) == 1 && ~strcmp(extractAfter(file,'.'),'txt')
-         FC = FC.store_video(file); 
+    if strcmp(extractBefore(file,'_'),[''model) == 1
+       FC = FC.store_video(file); 
     end
 end
 

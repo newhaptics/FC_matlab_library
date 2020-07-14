@@ -1,6 +1,6 @@
-function add_plotData(avgBright,df,name,t,figname,cell, color)
+function add_plotData(avgBright,df,name,t,fig,cell, color)
 
-openfig(figname);
+figure(fig);
 empty = 0;
 for k = 1:length(name)
     subplot(length(name), 1, k);
@@ -23,6 +23,7 @@ for k = 1:length(name)
     set(gca,'fontsize', 16);
     grid on
     ylabel(name(k));
+    set(get(gca,'YLabel'),'Rotation',360,'HorizontalAlignment','right');
     ylim([0 1]);
     if  k~=length(name)
         set(gca,'XTick',[]);
@@ -36,6 +37,4 @@ for k = 1:length(name)
 end
 x = get(0, 'DefaultFigurePosition');
 set(0, 'DefaultFigurePosition', [x(1:2), 800, 600]);
-savefig(figname);
-close(gcf);
 end
