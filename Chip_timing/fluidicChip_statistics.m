@@ -72,12 +72,12 @@ classdef fluidicChip_statistics
         end
 
         function FC = store_video(FC,filename)
-            
+
             %check if a multiline file
             if strcmp(extractBefore(filename,'_S'),FC.model) == 1 && ~strcmp(extractAfter(filename,'.'),'txt')
                 %get txt file
                 txtName = [char(extractBefore(filename,'D')) char('D.txt')];
-                
+
                 %open the file
                 if ~exist(txtName)
                     errorMessage = sprintf('Error: file %s not found.  Click OK to exit.\n', txtName);
@@ -87,70 +87,70 @@ classdef fluidicChip_statistics
                 end
                 fileID=fopen(txtName)
                 txtString = fscanf(fileID,'%s');
-                
+
                 %get number of elements
                 num = str2double(extractBetween(txtString,'S','_'));
-                
+
                 %loop through and store elemnt in proper place
-                for i = 1:num 
+                for i = 1:num
                     elem = ['E' num2str(i) '_'];
-                    
-                    %get filename for each element 
+
+                    %get filename for each element
                     elementName = extractBetween(txtString,elem,'_E');
-                    
+
                     %find the row and column from filename
-                    
+
                     location = [str2double(extractBetween(elementName,"r","_")) str2double(extractBetween(elementName,"c","_"))];
-                    
+
                     %extract input and add one for correct indexing
                     input = str2double(extractBetween(elementName,"in","_")) + 1;
-                    
+
                     %add the video to the correct video container
                     FC.videoContainer(input).videoMatrix(location(1),location(2)) = {filename};
-                    
+
                 end
-                
+
             elseif  ~strcmp(extractAfter(filename,'.'),'txt')
-            
+
             %takes in the name of a video file and stores it in the appropriate cell
             %find the row and column from filename
 
             location = [str2double(extractBetween(filename,"r","_")) str2double(extractBetween(filename,"c","_"))];
-            
+
             %extract input and add one for correct indexing
             input = str2double(extractBetween(filename,"in","_")) + 1;
-            
+
             %add the video to the correct video container
             FC.videoContainer(input).videoMatrix(location(1),location(2)) = {filename};
-            
+
             end
         end
-        
+
         function filename = get_videoFile(FC,location,input)
             filename = FC.videoContainer(input + 1).videoMatrix(location(1),location(2));
         end
-        
+
         function FC = get_cropData(FC,location,in)
-            
+
             disp({'cropping at row ' location(1) ' column ' location(2) ' input ' in});
-            
+
             reply='';
             reply=input('Do you want to pick new crop regions? y/[] (yes/use previous) : ','s');
-            
-            
+
+
             %try to crop if fail try again
             try
                 if strcmp(reply,'y')==1
                     %create video reader for cell
                     video = FC.create_reader(location,in);
-                    
+
                     %get the position matrix for the cell
                     posMatrix = position_matrix(video,FC.interestAreas);
-                    
-                    
+
+
                     %index in the crop matrix
                     index = FC.get_cropIndex(location);
-                    
+
                     %place the crop matrix in its proper place
                     FC.videoContainer(in + 1).cropMatrix(:,:,index) = posMatrix;
                     FC.cropData = posMatrix;
@@ -160,160 +160,169 @@ classdef fluidicChip_statistics
                     index = FC.get_cropIndex(location);
                     FC.videoContainer(in + 1).cropMatrix(:,:,index) = FC.cropData;
                 end
-                
+
             catch
                 disp('Something went wrong retrying element crop...');
                 FC.get_cropData(location,in);
-                
+
             end
-            
-            
+
+
         end
-        
-        
+
+
         function FC = get_cellData(FC,location,input)
             %create video reader for cell
             video = FC.create_reader(location,input);
-            
+
             %grab posMatrix
             %index in the crop matrix
             index = FC.get_cropIndex(location);
             posMatrix = FC.videoContainer(input + 1).cropMatrix(:,:,index);
-            
-            
+
+
             %calculate the average brightness and the cropped versions
             avgBright = average_brightness(posMatrix,video);
-            
+
             %add the electronic gate and in data
             %grab setup hold and pw times
-            
-            filename = FC.videoContainer(1,input + 1).videoMatrix(location(1),location(2));
-            s = [str2double(extractBetween(filename,"s","_"))] /1000;
-            h = [str2double(extractBetween(filename,"h","_"))] / 1000;
-            pw = [str2double(extractBetween(filename,"p","_"))] / 1000;
+
+            [~,~,s, h, pw] = FC.get_SEshpw(location,input);
             video = FC.create_reader(location,input);
             frameRate = video.FrameRate;
-            
-            
+            s = s/1000;
+            h = h/1000;
+            pw = pw/1000;
+
             avgBright = add_electronicData(avgBright,FC.interestAreas,s,h,pw,frameRate);
-            
+
             [normalData, ~] = FC.normalize_data(avgBright, avgBright, size(avgBright,1));
-            
-            
+
+
             df = diff(normalData);
             avgBright(end,:) = [];
-            
-            
-            
+
+
+
             %store inside of the brightMatrix container
             A = FC.brightMatrix(location(1),location(2));
             A = FC.store_brightnessData(avgBright,df,input,A);
             FC.brightMatrix(location(1),location(2)) = A;
-            
+
         end
-        
+
         function FC = get_timingData(FC,location,input)
             row = location(1);
             column = location(2);
-            
+
             %if input is 0 grab from data 0
             if input == 0
                 [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
             end
-            
+
             %if input is 1 grab from data 1
             if input == 1
                 [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
             end
-            
+
             if isempty(pulseBright) == 0
                 Gate_data = FC.timeContainer(input+1).chipGate_data;
                 In_data = FC.timeContainer(input+1).chipIn_data;
                 Out_data = FC.timeContainer(input+1).chipOut_data;
                 Trig_data = FC.timeContainer(input+1).chipTrig_data;
-                
-                filename = FC.videoContainer(1,input + 1).videoMatrix(row,column);
+
                 %get the setup hold and pulse width
-                s = [str2double(extractBetween(filename,"s","_"))];
-                h = [str2double(extractBetween(filename,"h","_"))];
-                pw = [str2double(extractBetween(filename,"p","_"))];
-                
-                
+                [~,~,s, h, pw] = FC.get_SEshpw(location,input);
+
+
                 [Gate_times, In_times, Out_times, Trig_times] = pulseData(pulseBright,FC.interestAreas,Gate_data,In_data,Out_data, Trig_data, input, s, h, pw);
-                
+
                 FC.timeContainer(input + 1).chipGate_times(row,column,:) = Gate_times;
                 FC.timeContainer(input + 1).chipIn_times(row,column,:) = In_times;
                 FC.timeContainer(input + 1).chipOut_times(row,column,:) = Out_times;
                 FC.timeContainer(input + 1).chipTrig_times(row,column,:) = Trig_times;
-                
+
                 %fill the framerate matrix
                 video = FC.create_reader(location,input);
-                
+
                 FC.videoContainer(1,input + 1).framerateMatrix(row,column) = video.framerate*16;
-                
-                
-                
-                
+
+
+
+
             else
                 disp({'no pulse found at' row column});
             end
-            
-            
+
+
         end
-        
-        
-        function [s,h,pw] = get_shpw(location,input)
-            %UNTITLED this function grabs the setup, hold and pulsewidth from a certain
+
+
+        function [S,E,s,h,pw] = get_SEshpw(FC,location,input)
+            %This function grabs the setup, hold and pulsewidth from a certain
             %location and input of an FC
-            %get txt file
-            txtName = [char(extractBefore(filename,'D')) char('D.txt')];
-            
-            %open the file
-            if ~exist(txtName)
-                errorMessage = sprintf('Error: file %s not found.  Click OK to exit.\n', txtName);
-                fprintf('%s\n', errorMessage);
-                uiwait(warndlg(errorMessage));
-                return;
+
+            %get filename for location
+            filename = FC.videoContainer(1,input + 1).videoMatrix(location(1),location(2));
+
+            %check if a multiline file
+            if strcmp(extractBefore(filename,'_S'),FC.model) == 1 && ~strcmp(extractAfter(filename,'.'),'txt')
+                %get txt file
+                txtName = [char(extractBefore(filename,'D')) char('D.txt')];
+
+                %open the file
+                if ~exist(txtName)
+                    errorMessage = sprintf('Error: file %s not found.  Click OK to exit.\n', txtName);
+                    fprintf('%s\n', errorMessage);
+                    uiwait(warndlg(errorMessage));
+                    return;
+                end
+                fileID=fopen(txtName)
+                txtString = fscanf(fileID,'%s');
+
+                %grab proper setup and hold time from the file
+                elem = ['_r' num2str(location(1)) '_c' num2str(location(2)) '_in' num2str(input)];
+
+                %get the setup hold and pulse width
+
+                shpw = extractBetween(txtString,elem,'_E');
+                s = [str2double(extractBetween(shpw,'s','_h'))];
+                h = [str2double(extractBetween(shpw,'h','_p'))];
+                pw = [str2double(extractAfter(shpw,'p'))];
+
+                %get S and E
+                E = [str2double(extractBetween(txtString,'E',elem))];
+                S = [str2double(extractBetween(txtString,'S','_'))];
+
+            elseif  ~strcmp(extractAfter(filename,'.'),'txt')
+
+                s = [str2double(extractBetween(filename,"s","_"))];
+                h = [str2double(extractBetween(filename,"h","_"))];
+                pw = [str2double(extractBetween(filename,"p","_"))];
+
+                S = [];
+                E = [];
+
+
             end
-            fileID=fopen(txtName)
-            txtString = fscanf(fileID,'%s');
-            
-            %get number of elements
-            num = str2double(extractBetween(txtString,'S','_'));
-            
-            %loop through and store elemnt in proper place
-            for i = 1:num
-                elem = ['E' num2str(i) '_'];
-                
-                %get filename for each element
-                elementName = extractBetween(txtString,elem,'_E');
-                
-                %find the row and column from filename
-                
-                location = [str2double(extractBetween(elementName,"r","_")) str2double(extractBetween(elementName,"c","_"))];
-                
-                %extract input and add one for correct indexing
-                input = str2double(extractBetween(elementName,"in","_")) + 1;
-                
-                %add the video to the correct video container
-                FC.videoContainer(input).videoMatrix(location(1),location(2)) = {filename};
-            end
-            
-            
-            
+
+        end
+
+
+
             function generate_cellBrightnessdata(FC,location,input)
-                
+
                 [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
-                
+
                 localString = ['cell [' num2str(location(1)) ' ' num2str(location(2)) '] input ' num2str(input)];
-                
+
                 if ~isempty(avgBright)
-                    
+
                     %interpolate data to correct length for the chipGate,
                     %chipIn and chipOut normalize around the pulse
                     [avgBright,df] = FC.rawData_normalizer(avgBright,df);
                     [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
-                    
+
                     plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
                     figname = [FC.model 'fig3'];
                     savefig(figname);
@@ -414,12 +423,12 @@ classdef fluidicChip_statistics
                 savefig(figname1);
                 figure(fig2);
                 savefig(figname2);
-                
+
             else
                 disp(['crop dimensions incorrect rows ' num2str(rowCrop) ' columns ' num2str(columnCrop)]);
             end
-            
-            
+
+
 
 
         end
@@ -432,22 +441,22 @@ classdef fluidicChip_statistics
             inHeader = [FC.model ' In Timing Input ' num2str(input)];
             outHeader = [FC.model ' Out Timing Input ' num2str(input)];
             trigHeader = [FC.model ' Trigger Timing Input ' num2str(input)];
-            
+
             gateMatrix = FC.timeContainer(1,input + 1).chipGate_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             inMatrix = FC.timeContainer(1,input + 1).chipIn_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             outMatrix = FC.timeContainer(1,input + 1).chipOut_times ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             trigMatrix(:,:,1:3) = FC.timeContainer(1,input + 1).chipTrig_times(:,:,1:3) ./ FC.videoContainer(1,input + 1).framerateMatrix * 1000;
             trigMatrix(:,:,4:6) = FC.timeContainer(1,input + 1).chipTrig_times(:,:,4:6);
-            
+
             %create a differenc matrix
             trigDiff_mat = trigMatrix(:,:,1:3) - trigMatrix(:,:,4:6);
             trigDiff_data = {'Setup Diff','Hold Diff','Pulse Width Diff'};
             %diffHeader = 'Setup, Hold, Pulse Width Differences';
-            
+
             %merge diff and trig matrices
             trigMatrix = cat(3,trigMatrix,trigDiff_mat);
-            
-            
+
+
             make_heatMap(gateMatrix,FC.timeContainer(1,2).chipGate_data, gateHeader);
             set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
             make_heatMap(inMatrix,FC.timeContainer(1,2).chipIn_data, inHeader);
@@ -468,7 +477,7 @@ classdef fluidicChip_statistics
     methods (Access = private)
 
 
-        
+
         function [normalizedData, normalizedDif] = normalize_data(FC,rawData, rawDif, resolution)
 
             %process the data
@@ -486,7 +495,7 @@ classdef fluidicChip_statistics
                 rawDif(:,i) = smooth(rawDif(:,i),20,'sgolay');
             end
 
-            
+
             t = linspace(1,size(rawData,1),resolution)';
             %add more points on the x axis
             normalizedData = interp1(rawData,t);
@@ -500,16 +509,16 @@ classdef fluidicChip_statistics
             %shrink y to between 0 and y size
             normalizedDif = normalizedDif - min(abs(normalizedDif));
             normalizedDif = (normalizedDif./max(abs(normalizedDif)));
-            
+
 
         end
-        
+
         function [normalBright,normalDf] = rawData_normalizer(FC,avgBright,df)
             %rawData_normalizer if the data is chipGate, chipIn, or chipOut normalize to the
             %pulse
             %find the pulsecrop of the vectors
             [pulseDf, pulseBright, fallEdge, riseEdge] = pulseCrop(avgBright,df,FC.interestAreas);
-            
+
             %find the index of the chipGate chipIn and chipOut data and
             %extract each vector column
             gateIndex = findIndex(FC.interestAreas,'chipGate');
@@ -521,16 +530,16 @@ classdef fluidicChip_statistics
             inDif = pulseDf(20:end - 20,inIndex);
             outVec = pulseBright(20:end - 20,outIndex);
             outDif = pulseDf(20:end - 20,outIndex);
-            
+
             %add 20 to fall Edge and subtract 20 from riseEdge
             fallEdge = fallEdge + 19;
             riseEdge = riseEdge - 19;
-            
-            %normalize the vectors 
+
+            %normalize the vectors
             [gateVec, gateDif] = FC.normalize_data(gateVec, gateDif, size(gateVec,1));
             [inVec, inDif] = FC.normalize_data(inVec, inDif, size(inVec,1));
             [outVec, outDif] = FC.normalize_data(outVec, outDif, size(outVec,1));
-            
+
             %merge the properly normalized vectors with the old data
             gateVec = [avgBright(1:fallEdge, gateIndex); gateVec; avgBright(riseEdge:end, gateIndex)];
             gateDif = [df(1:fallEdge, gateIndex); gateDif; df(riseEdge:end, gateIndex)];
@@ -538,10 +547,10 @@ classdef fluidicChip_statistics
             inDif = [df(1:fallEdge, inIndex); inDif; df(riseEdge:end, inIndex)];
             outVec = [avgBright(1:fallEdge, outIndex); outVec; avgBright(riseEdge:end, outIndex)];
             outDif = [df(1:fallEdge, outIndex); outDif; df(riseEdge:end, outIndex)];
-            
+
             %normalize everthing
             [normalBright,normalDf] = FC.normalize_data(avgBright, df, size(avgBright,1));
-            
+
             %inject the vectors
             normalBright(:,gateIndex) = gateVec;
             normalDf(:,gateIndex) = gateDif;
@@ -549,10 +558,10 @@ classdef fluidicChip_statistics
             normalDf(:,inIndex) = inDif;
             normalBright(:,outIndex) = outVec;
             normalDf(:,outIndex) = outDif;
-           
+
         end
 
-        
+
         function [avgLength, pulseLength, numPoints, first_frame] = get_frameSize(FC,rows,columns,input)
 
             index = findIndex(FC.interestAreas,'gateLed');
@@ -589,12 +598,18 @@ classdef fluidicChip_statistics
         function [avgBright, df, pulseBright, pulseDf] = get_brightData(FC,location,input)
             row = location(1);
             column = location(2);
-            
+
             if input == 0
                 avgBright = FC.brightMatrix(row,column).avgBright0;
                 df = FC.brightMatrix(row,column).df0;
                 if ~isempty(avgBright)
-                    [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                    %check for fucky gate pulse
+                    [S,E,~,~,~] = get_SEshpw(FC,location,input);
+                    if isempty(S)
+                        [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                    else
+                        [pulseDf, pulseBright,~,~] = multi_pulseCrop(avgBright, df, FC.interestAreas,S,E);
+                    end
                 else
                     pulseDf = [];
                     pulseBright = [];
@@ -604,7 +619,13 @@ classdef fluidicChip_statistics
                 avgBright = FC.brightMatrix(row,column).avgBright1;
                 df = FC.brightMatrix(row,column).df1;
                 if ~isempty(avgBright)
-                    [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                    %check for fucky gate pulse
+                    [S,E,~,~,~] = get_SEshpw(FC,location,input);
+                    if isempty(S)
+                        [pulseDf, pulseBright,~,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                    else
+                        [pulseDf, pulseBright,~,~] = multi_pulseCrop(avgBright, df, FC.interestAreas,S,E);
+                    end
                 else
                     pulseDf = [];
                     pulseBright = [];

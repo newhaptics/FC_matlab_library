@@ -1,4 +1,4 @@
-function [pulseDf, pulseBright, fallEdge, riseEdge] = pulseCrop(avgBright,df,name)
+function [pulseDf, pulseBright, fallEdge, riseEdge] = multi_pulseCrop(avgBright,df,name,S,E)
 % pulseData takes in the avgBright and df data and crops it to fit within
 % also returns the amount cropped off at the beginning
 % the pulse of the arduino leds
