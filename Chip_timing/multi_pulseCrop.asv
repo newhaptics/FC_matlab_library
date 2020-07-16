@@ -17,12 +17,13 @@ gate_change = find(gate_change == 1);
 
 %get number of pulses
 numPulses = length(gate_change)/2;
+multiplier = mod(E,numPulses) - 1;
 
 %find the pulse for the element
-Epulse = mod(E - 1,numPulses) + 1;
+Epulse = E - numPulses*multiplier;
 
 %grab that pulse
-gate_change = [gate_change(Epulse*2 - 1) gate_change(Epulse*2)];
+gate_change = [gate_change(Epulse) gate_change(Epulse + 1)];
 
 %seperate into start change and end change
 s = (gate_change(end) - gate_change(1))/2 + gate_change(1);
@@ -33,9 +34,9 @@ fallingEdge = gate_change(gate_change < s);
 risingEdge = gate_change(gate_change > s);
 
 %cropped pulse brightness and differential
-pulseDf = df(fallingEdge(end):(risingEdge(1)+ s - gate_change(1)) - 1,:);
-pulseBright = avgBright(fallingEdge(end):(risingEdge(1)+ s - gate_change(1)) - 1,:);
+pulseDf = df(fallingEdge(end):risingEdge(1) - 1,:);
+pulseBright = avgBright(fallingEdge(end):risingEdge(1) - 1,:);
 fallEdge = fallingEdge(end);
-riseEdge = ceil((risingEdge(1)+ s - gate_change(1)));
+riseEdge = risingEdge(1);
 
 end

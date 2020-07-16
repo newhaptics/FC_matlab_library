@@ -31,10 +31,10 @@ end
 
 %% Generate combined brightness graphs
 
-FC.generate_allBrightnessdata([1:15],[1:14],2);
+FC.generate_allBrightnessdata([1:15],[1:14],2,1);
 
 %% graph adjustment parameters
-x_limits = [0 inf];
+x_limits = [150 350];
 y_limits = [0 1];
 df = 0;
 display_off = '2';
@@ -88,30 +88,6 @@ for i = 1:6
     end
 end
 plotbrowser(h,'on');
-
-%% raw pulse not aligned data
-h = openfig([FC.model 'fig3']);
-for i = 1:6
-    handles = findobj(h,'Type','axes');
-    xlim(handles(i), x_limits);
-    if i < 4
-        handles(i).YLim = y_limits;
-    end
-    %uncheck all df graphs
-    L = get(handles(i),'children');
-    for k=1:length(L)
-        s = split(L(k).DisplayName);
-        if size(s,1) == 6 && ~df
-            delete(L(k));
-        elseif strcmp(s(5),display_off)
-            delete(L(k));
-        elseif ~(sum(strcmp([char(s(2)) ' ' char(s(3))],compareList)) >= 1) && select
-            delete(L(k));
-        end
-    end
-end
-plotbrowser(h,'on');
-
 
 %%
 FC.generate_timingData(1)

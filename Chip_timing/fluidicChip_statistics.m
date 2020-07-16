@@ -85,7 +85,7 @@ classdef fluidicChip_statistics
                     uiwait(warndlg(errorMessage));
                     return;
                 end
-                fileID=fopen(txtName)
+                fileID=fopen(txtName);
                 txtString = fscanf(fileID,'%s');
 
                 %get number of elements
@@ -183,18 +183,22 @@ classdef fluidicChip_statistics
 
             %calculate the average brightness and the cropped versions
             avgBright = average_brightness(posMatrix,video);
+            
+            %flip the output data for easy recording
+            index = findIndex(FC.interestAreas,'chipOut');
+            avgBright(:,index) = max(avgBright(:,index)) - avgBright(:,index) + min(avgBright(:,index));
 
             %add the electronic gate and in data
             %grab setup hold and pw times
 
-            [~,~,s, h, pw] = FC.get_SEshpw(location,input);
+            [S,E,s, h, pw] = FC.get_SEshpw(location,input);
             video = FC.create_reader(location,input);
             frameRate = video.FrameRate;
             s = s/1000;
             h = h/1000;
             pw = pw/1000;
 
-            avgBright = add_electronicData(avgBright,FC.interestAreas,s,h,pw,frameRate);
+            avgBright = add_electronicData(avgBright,FC.interestAreas,s,h,pw,frameRate,E,S);
 
             [normalData, ~] = FC.normalize_data(avgBright, avgBright, size(avgBright,1));
 
@@ -277,7 +281,7 @@ classdef fluidicChip_statistics
                     uiwait(warndlg(errorMessage));
                     return;
                 end
-                fileID=fopen(txtName)
+                fileID=fopen(txtName);
                 txtString = fscanf(fileID,'%s');
 
                 %grab proper setup and hold time from the file
@@ -291,7 +295,8 @@ classdef fluidicChip_statistics
                 pw = [str2double(extractAfter(shpw,'p'))];
 
                 %get S and E
-                E = [str2double(extractBetween(txtString,'E',elem))];
+                E = extractBefore(txtString,elem);
+                E = [str2double(E(end))];
                 S = [str2double(extractBetween(txtString,'S','_'))];
 
             elseif  ~strcmp(extractAfter(filename,'.'),'txt')
@@ -302,69 +307,69 @@ classdef fluidicChip_statistics
 
                 S = [];
                 E = [];
-
-
+                
+                
             end
-
+            
         end
-
-
-
-            function generate_cellBrightnessdata(FC,location,input)
-
-                [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
-
-                localString = ['cell [' num2str(location(1)) ' ' num2str(location(2)) '] input ' num2str(input)];
-
-                if ~isempty(avgBright)
-
-                    %interpolate data to correct length for the chipGate,
-                    %chipIn and chipOut normalize around the pulse
-                    [avgBright,df] = FC.rawData_normalizer(avgBright,df);
-                    [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
-
-                    plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
-                    figname = [FC.model 'fig3'];
-                    savefig(figname);
-                    set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
-                    plotData(pulseBright,pulseDf,FC.interestAreas, ['\fontsize{20}' 'Gate Pulse Brightness Data ' localString]);
-                    figname = [FC.model 'fig4'];
-                    savefig(figname);
-                    set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
-                else
-                    disp(['no data in ' localString]);
-                end
-
+        
+        
+        
+        function generate_cellBrightnessdata(FC,location,input)
+            
+            [avgBright, df, pulseBright, pulseDf] = FC.get_brightData(location,input);
+            
+            localString = ['cell [' num2str(location(1)) ' ' num2str(location(2)) '] input ' num2str(input)];
+            
+            if ~isempty(avgBright)
+                
+                %interpolate data to correct length for the chipGate,
+                %chipIn and chipOut normalize around the pulse
+                [avgBright,df] = FC.rawData_normalizer(avgBright,df);
+                [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, size(pulseBright,1));
+                
+                plotData(avgBright,df,FC.interestAreas, ['\fontsize{20}' 'Raw Brightness Data ' localString]);
+                figname = [FC.model 'fig4'];
+                savefig(figname);
+                set(gcf, 'units', 'normalized', 'position', [1 -.425 .57 .825]);
+                plotData(pulseBright,pulseDf,FC.interestAreas, ['\fontsize{20}' 'Gate Pulse Brightness Data ' localString]);
+                figname = [FC.model 'fig5'];
+                savefig(figname);
+                set(gcf, 'units', 'normalized', 'position', [1 .475 .57 .825]);
+            else
+                disp(['no data in ' localString]);
+            end
+            
         end
-
+        
         function generate_allBrightnessdata(FC,rowCrop,columnCrop,input)
             % input 0 for 0 input 1 for 1 and input 2 for both
             % crop allows a selection of the chip rowCrop crops the rows
             % and columnCrop crops the columns
-
+            
             dimensions = size(FC.chip);
             rows = dimensions(1);
             columns = dimensions(2);
-
-
+            
+            
             if input == 2
                 input = 0:1;
             end
-
+            
             cropString = ['rows [' num2str(rowCrop(1)) ' ' num2str(rowCrop(end)) '] columns [' num2str(columnCrop(1)) ' ' num2str(columnCrop(end)) '] input [' num2str(input) ']'];
-
+            
             %check that crop is of correct size
             if ((rowCrop(1) >= 1) && (rowCrop(end) <= rows)) && ((columnCrop(1) >= 1) && (columnCrop(end) <= columns))
-
-
+                
+                
                 [avgLength, pulseLength, numPoints, first_frame] = FC.get_frameSize([rowCrop(1) rowCrop(end)],[columnCrop(1) columnCrop(end)],input);
-
+                
                 %create color array
                 colors = hsv(numPoints);
                 numPoints = 1;
-
+                
                 %create two figures one for pulse and one for normal data
-                fig1 = figure('NumberTitle', 'off', 'Name', ['\fontsize{20}' 'Raw Brightness Data ' cropString]);
+                fig1 = figure('NumberTitle', 'off', 'Name', ['\fontsize{20}' 'Raw LED aligned Brightness Data ' cropString]);
                 clf(fig1);
                 subplot(length(FC.interestAreas), 1, 1);
                 title(['\fontsize{20}' 'Raw Brightness Data ' cropString]);
@@ -376,61 +381,71 @@ classdef fluidicChip_statistics
                 title(['\fontsize{20}' 'Gate Pulse Brightness Data ' cropString]);
                 figname2 = [FC.model 'fig2'];
                 savefig(figname2);
-
+                fig3 = figure('NumberTitle', 'off', 'Name', ['\fontsize{20}' 'Raw Pulse Brightness Data ' cropString]);
+                clf(fig3);
+                subplot(length(FC.interestAreas), 1, 1);
+                title(['\fontsize{20}' 'Gate Pulse Brightness Data ' cropString]);
+                figname3= [FC.model 'fig3'];
+                savefig(figname3);
+                
                 %cycle through the correct rows and columns and add the
                 %brightness data to the graph
                 for i = rowCrop(1):rowCrop(end)
                     for j = columnCrop(1):columnCrop(end)
                         for state = input
-
+                            
                             localString = ['cell [' num2str(i) ' ' num2str(j) '] input ' num2str(state)];
-
+                            
                             [avgBright, df, pulseBright, pulseDf] = FC.get_brightData([i j],state);
-
-
+                            
+                            
                             if ~isempty(avgBright)
-
-
+                                
+                                
                                 %interpolate data to correct length
-                                [avgBright, df] = FC.rawData_normalizer(avgBright,df);
+                                [avgBright, df] = FC.rawData_normalizer(avgBright,df,[i j],state);
                                 [pulseBright, pulseDf] = FC.normalize_data(pulseBright, pulseDf, pulseLength);
-
-
+                                
+                                
                                 %pad the data to get proper length
                                 %avgBright = [avgBright;zeros(avgLength - length(avgBright),length(FC.interestAreas)) + mean(avgBright)];
                                 %df = [df;zeros(avgLength - length(df),length(FC.interestAreas)) + mean(df)];
                                 %pulseBright = [pulseBright;zeros(pulseLength - length(pulseBright),length(FC.interestAreas)) + mean(pulseBright)];
                                 %pulseDf = [pulseDf;zeros(pulseLength - length(pulseDf),length(FC.interestAreas)) + mean(pulseDf)];
-
+                                
                                 %create time to line up gates
                                 start = max(max(max(first_frame))) - first_frame(i,j,state + 1) + 1;
                                 t = start:(size(avgBright,1) + start - 1);
-
-
+                                
+                                
                                 disp(['adding plot data in ' localString '...']);
                                 add_plotData(avgBright,df,FC.interestAreas, t, fig1,localString, colors(numPoints,:));
                                 add_plotData(pulseBright,pulseDf,FC.interestAreas, 1:pulseLength, fig2,localString, colors(numPoints,:));
+                                add_plotData(avgBright,df,FC.interestAreas, 1:size(avgBright,1), fig3,localString, colors(numPoints,:));
                                 numPoints = numPoints + 1;
-
+                                
                             else
                                 disp(['no data in ' localString]);
                             end
-
+                            
                         end
                     end
                 end
                 figure(fig1);
                 savefig(figname1);
+                close(fig1);
                 figure(fig2);
                 savefig(figname2);
-
+                close(fig2);
+                figure(fig3);
+                savefig(figname3);
+                close(fig3);
             else
                 disp(['crop dimensions incorrect rows ' num2str(rowCrop) ' columns ' num2str(columnCrop)]);
             end
-
-
-
-
+            
+            
+            
         end
 
 
@@ -483,7 +498,7 @@ classdef fluidicChip_statistics
             %process the data
             %smooth incoming data to sharpen edges
             for i = 1:size(rawData,2)
-                if ~contains(FC.interestAreas(i),'electronic')
+                if ~contains(FC.interestAreas(i),'electronic') && ~contains(FC.interestAreas(i),'gateLed')
                     rawData(:,i) = smooth(rawData(:,i),7,'rlowess');
                     rawData(:,i) = smooth(rawData(:,i),3,'loess');
                 end
@@ -513,27 +528,33 @@ classdef fluidicChip_statistics
 
         end
 
-        function [normalBright,normalDf] = rawData_normalizer(FC,avgBright,df)
+        function [normalBright,normalDf] = rawData_normalizer(FC,avgBright,df,location,input)
             %rawData_normalizer if the data is chipGate, chipIn, or chipOut normalize to the
             %pulse
             %find the pulsecrop of the vectors
-            [pulseDf, pulseBright, fallEdge, riseEdge] = pulseCrop(avgBright,df,FC.interestAreas);
+            %check for fucky gate pulse
+            [S,E,~,~,~] = get_SEshpw(FC,location,input);
+            if isempty(S)
+                [pulseDf, pulseBright,fallEdge,riseEdge] = pulseCrop(avgBright, df, FC.interestAreas);
+            else
+                [pulseDf, pulseBright,fallEdge,riseEdge] = multi_pulseCrop(avgBright, df, FC.interestAreas,S,E);
+            end
+            
+            pulseBuffer = 1;
 
             %find the index of the chipGate chipIn and chipOut data and
             %extract each vector column
             gateIndex = findIndex(FC.interestAreas,'chipGate');
             inIndex = findIndex(FC.interestAreas,'chipIn');
             outIndex = findIndex(FC.interestAreas,'chipOut');
-            gateVec = pulseBright(20:end - 20,gateIndex);
-            gateDif = pulseDf(20:end - 20,gateIndex);
-            inVec = pulseBright(20:end - 20,inIndex);
-            inDif = pulseDf(20:end - 20,inIndex);
-            outVec = pulseBright(20:end - 20,outIndex);
-            outDif = pulseDf(20:end - 20,outIndex);
+            gateVec = pulseBright(pulseBuffer:(end - pulseBuffer + 1),gateIndex);
+            gateDif = pulseDf(pulseBuffer:(end - pulseBuffer + 1),gateIndex);
+            inVec = pulseBright(pulseBuffer:(end - pulseBuffer + 1),inIndex);
+            inDif = pulseDf(pulseBuffer:(end - pulseBuffer + 1),inIndex);
+            outVec = pulseBright(pulseBuffer:(end - pulseBuffer + 1),outIndex);
+            outDif = pulseDf(pulseBuffer:(end - pulseBuffer + 1),outIndex);
 
             %add 20 to fall Edge and subtract 20 from riseEdge
-            fallEdge = fallEdge + 19;
-            riseEdge = riseEdge - 19;
 
             %normalize the vectors
             [gateVec, gateDif] = FC.normalize_data(gateVec, gateDif, size(gateVec,1));
@@ -585,7 +606,14 @@ classdef fluidicChip_statistics
                         end
                         if ~isempty(avgBright)
                             numPoints = numPoints + 1;
-                            [~,~,gate,~] = pulseCrop(avgBright,df,FC.interestAreas);
+                            
+                            %check for fucky gate pulse
+                            [S,E,~,~,~] = get_SEshpw(FC,[i j],state);
+                            if isempty(S)
+                                [~,~,gate,~] = pulseCrop(avgBright, df, FC.interestAreas);
+                            else
+                                [~,~,gate,~] = multi_pulseCrop(avgBright, df, FC.interestAreas,S,E);
+                            end
                             first_frame(i,j,state + 1) = gate;
                         end
 

@@ -6,7 +6,7 @@ function [chipGate_vec, chipIn_vec, chipOut_vec, chipTrig_vec] = pulseData(pulse
 safePulse = 1;
 
 %get the difference vector for pulseBright
-pulseBright = pulseBright(safePulse:(end-safePulse + 1),:) - min(pulseBright(safePulse:(end - safePulse + 1),:));
+pulseBright = pulseBright(safePulse + 1:end-safePulse,:) - min(pulseBright(safePulse + 1:end - safePulse,:));
 
 %declare vector sizes
 chipGate_vec = [1 length(chipGate_data)];
@@ -145,7 +145,7 @@ end
 function [pulseGate, pulseGate_bottom] = find_gatePulse(pulseBright,index)
 
 %define the reference 1 and 0 value
-gate1_reference = mean(pulseBright(1:end,index) > mean(pulseBright(1:end,index)));
+gate1_reference = mean(pulseBright(1:end,index));
 gate0_reference = min(pulseBright(1:end,index));
 
 %first find the bottom of the gate and build from there
@@ -158,7 +158,7 @@ for i = flip(1:gateBottom)
     else
         if pulseBright(i,index) < pulseBright(i - 1, index)
             if i == 2
-                pulseGate_start = 1;
+                pulseGate_start = i;
                 break
             end
             pulseGate_start = i;
@@ -168,7 +168,7 @@ for i = flip(1:gateBottom)
     end
 end
 
-stop = length(pulseBright);
+stop = length(pulseBright) - 20;
 
 pulseGate_end = gateBottom;
 %build forwards in time second
@@ -178,7 +178,7 @@ for i = gateBottom:stop
     else
         if pulseBright(i,index) < pulseBright(i + 1, index)
             if i == stop-1
-                pulseGate_end = stop;
+                pulseGate_end = i;
                 break
             end
             pulseGate_end = i;
@@ -202,11 +202,11 @@ function [pulseIn, pulseIn_steady] = find_chipIn(pulseBright,index,in)
 
 %define the reference 1 and 0 value
 if in == 0
+    gate1_reference = mean(pulseBright(1:end,index));
     gate0_reference = min(pulseBright(1:end,index));
-    gate1_reference = mean(pulseBright(1:end,index) > mean(pulseBright(1:end,index)));
 else
     gate1_reference = max(pulseBright(1:end,index));
-    gate0_reference = mean(pulseBright(1:end,index) < mean(pulseBright(1:end,index)));
+    gate0_reference = mean(pulseBright(1:end,index));
 end
 
 %first find the bottom of the gate and build from there
@@ -223,7 +223,7 @@ for i = flip(1:gateSwitch)
         A = pulseBright(i,index) < 0.7*gate1_reference;
         B = pulseBright(i,index) < pulseBright(i - 1, index);
     else
-        A = pulseBright(i,index) > 0.7*gate1_reference;
+        A = pulseBright(i,index) > 3*gate0_reference;
         B = pulseBright(i,index) > pulseBright(i - 1, index);
     end
         
@@ -232,7 +232,7 @@ for i = flip(1:gateSwitch)
     else
         if B
             if i == 2
-                pulseIn_start = 1;
+                pulseIn_start = i;
                 break
             end
             pulseIn_start = i;
@@ -242,7 +242,7 @@ for i = flip(1:gateSwitch)
     end
 end
 
-stop = length(pulseBright);
+stop = length(pulseBright) - 20;
 
 pulseIn_end = gateSwitch;
 %build forwards in time second
@@ -251,7 +251,7 @@ for i = gateSwitch:stop
         A = pulseBright(i,index) < 0.7*gate1_reference;
         B = pulseBright(i,index) < pulseBright(i + 1, index);
     else
-        A = pulseBright(i,index) > 0.7*gate1_reference;
+        A = pulseBright(i,index) > 3*gate0_reference;
         B = pulseBright(i,index) > pulseBright(i + 1, index);
     end
     
@@ -287,21 +287,15 @@ function [outPulse] = find_outPulse(pulseBright,index,in)
 gate1_reference = max(pulseBright(1:end,index));
 gate0_reference = min(pulseBright(1:end,index));
 
-if in == 0
-   change = find(pulseBright(:,index) == gate1_reference);
-else
-   change = find(pulseBright(:,index) == gate0_reference);
-end
-
 outPulse_start = 0;
 outPulse_end = 0;
 
 %find middle value
-N = pulseBright(change(1):end,index); 
+N = pulseBright(1:end,index); 
 V = max(pulseBright(1:end,index)) - mean(pulseBright(1:end,index));
 
 [~, closestIndex] = min(abs(N - V.'));
-outSwitch = closestIndex + change(1);
+outSwitch = closestIndex;
 
 %build backwards in time first
 for i = flip(1:outSwitch)

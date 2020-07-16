@@ -1,9 +1,13 @@
-function [avgBright] = add_electronicData(avgBright,name,s,h,pw,frameRate)
+function [avgBright] = add_electronicData(avgBright,name,s,h,pw,frameRate,E,S)
 %ADD_ELECTRONICDATA adds the electronic triggers to avgBright
 
 
 frameRate = frameRate*16;
-ledDelay = ceil(0.5*frameRate);
+if isempty(S)
+    ledDelay = ceil(0.5*frameRate);
+else 
+    ledDelay= ceil(0.0005*frameRate);
+end
 
 %convert s, h, and pw to frames
 s = ceil(s*frameRate);
@@ -11,9 +15,13 @@ h = ceil(h*frameRate);
 pw = ceil(pw*frameRate);
 
 %find where the Gate signal starts and where the In signal starts
-index = findIndex(name,'gateLed');
 df = diff(avgBright);
-ledLow = find(df(:,index) == min(df(:,index)));
+if isempty(S)
+    [~, ~,fallEdge,~] = pulseCrop(avgBright, df, name);
+else
+    [~, ~,fallEdge,~] = multi_pulseCrop(avgBright, df, name,S,E);
+end
+ledLow = fallEdge;
 gateStart = ledLow + ledDelay;
 inStart = ledLow + ledDelay - s;
 
